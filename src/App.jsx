@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = "https://rag-chatbot-production-ecb6.up.railway.app";
 
 function makeChatId() {
   return `chat_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
