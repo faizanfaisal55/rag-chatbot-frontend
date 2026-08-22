@@ -100,10 +100,6 @@ function App() {
     updateActiveChatMessages(() => []);
   };
 
-  // ==========================================================
-  // Chat delete / archive
-  // ==========================================================
-
   const pickNextActiveChat = (remainingChats) => {
     const firstVisible = remainingChats.find((c) => !c.archived);
     if (firstVisible) {
@@ -135,7 +131,7 @@ function App() {
     setChats((prev) => {
       const updated = prev.map((c) => (c.id === id ? { ...c, archived: true } : c));
       if (id === activeChatId) {
-        pickNextActiveChat(updated.filter((c) => c.id !== id).concat(updated.find((c) => c.id === id)));
+        pickNextActiveChat(updated);
       }
       return updated;
     });
@@ -145,10 +141,6 @@ function App() {
     event.stopPropagation();
     setChats((prev) => prev.map((c) => (c.id === id ? { ...c, archived: false } : c)));
   };
-
-  // ==========================================================
-  // Upload File
-  // ==========================================================
 
   const handleFiles = async (fileList) => {
     const file = fileList[0];
@@ -352,8 +344,8 @@ function App() {
       <aside className={`sidebar ${sidebarOpen ? "open" : ""}`}>
 
         <div className="sidebar-brand">
-          <div className="logo">🤖</div>
-          <span className="brand-name">RAG Chatbot</span>
+          <div className="logo">✦</div>
+          <span className="brand-name">Lumis</span>
         </div>
 
         <button className="new-chat-btn" onClick={startNewChat}>
@@ -507,7 +499,7 @@ function App() {
             </button>
             <span className="status-dot" />
             <div>
-              <h2>RAG Assistant</h2>
+              <h2>Lumis</h2>
               <p>Ask me anything about your documents</p>
             </div>
           </div>
@@ -529,14 +521,14 @@ function App() {
           {activeChat.messages.length === 0 ? (
             <div className="welcome">
               <div className="welcome-icon">✦</div>
-              <h2>How can I help you?</h2>
+              <h2>Hi, I'm Lumis</h2>
               <p>Upload a document or add a website link, then ask questions about its contents.</p>
             </div>
           ) : (
             activeChat.messages.map((message, index) => (
               <div key={index} className={`message-row ${message.role}`}>
 
-                {message.role === "bot" && <div className="avatar bot-avatar">🤖</div>}
+                {message.role === "bot" && <div className="avatar bot-avatar">✦</div>}
 
                 <div className="message-col">
                   <div className={`bubble ${message.role}`}>
@@ -575,7 +567,7 @@ function App() {
 
           {loading && (
             <div className="message-row bot">
-              <div className="avatar bot-avatar">🤖</div>
+              <div className="avatar bot-avatar">✦</div>
               <div className="message-col">
                 <div className="bubble bot thinking">
                   <span>Thinking</span>
