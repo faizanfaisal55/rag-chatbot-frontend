@@ -14,9 +14,10 @@ function timeNow() {
 function App() {
   const [chats, setChats] = useState(() => {
     const id = makeChatId();
-    return [{ id, title: "New Chat", messages: [], createdAt: Date.now() }];
+    return [{ id, title: "New Chat", messages: [], createdAt: Date.now(), archived: false }];
   });
   const [activeChatId, setActiveChatId] = useState(chats[0].id);
+  const [showArchived, setShowArchived] = useState(false);
 
   const [question, setQuestion] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -35,6 +36,8 @@ function App() {
   const fileInputRef = useRef(null);
 
   const activeChat = chats.find((c) => c.id === activeChatId) || chats[0];
+  const visibleChats = chats.filter((c) => !c.archived);
+  const archivedChats = chats.filter((c) => c.archived);
 
   useEffect(() => {
     if (chatBoxRef.current) {
@@ -84,7 +87,7 @@ function App() {
   const startNewChat = () => {
     const id = makeChatId();
     setChats((prev) => [
-      { id, title: "New Chat", messages: [], createdAt: Date.now() },
+      { id, title: "New Chat", messages: [], createdAt: Date.now(), archived: false },
       ...prev,
     ]);
     setActiveChatId(id);
@@ -96,6 +99,56 @@ function App() {
   const clearActiveChat = () => {
     updateActiveChatMessages(() => []);
   };
+
+  // ==========================================================
+  // Chat delete / archive
+  // ==========================================================
+
+  const pickNextActiveChat = (remainingChats) => {
+    const firstVisible = remainingChats.find((c) => !c.archived);
+    if (firstVisible) {
+      setActiveChatId(firstVisible.id);
+    } else {
+      const id = makeChatId();
+      const newChat = { id, title: "New Chat", messages: [], createdAt: Date.now(), archived: false };
+      setChats([newChat, ...remainingChats]);
+      setActiveChatId(id);
+    }
+  };
+
+  const deleteChat = (id, event) => {
+    event.stopPropagation();
+    if (!window.confirm("Delete this chat? This cannot be undone.")) return;
+
+    setChats((prev) => {
+      const remaining = prev.filter((c) => c.id !== id);
+      if (id === activeChatId) {
+        pickNextActiveChat(remaining);
+      }
+      return remaining;
+    });
+  };
+
+  const archiveChat = (id, event) => {
+    event.stopPropagation();
+
+    setChats((prev) => {
+      const updated = prev.map((c) => (c.id === id ? { ...c, archived: true } : c));
+      if (id === activeChatId) {
+        pickNextActiveChat(updated.filter((c) => c.id !== id).concat(updated.find((c) => c.id === id)));
+      }
+      return updated;
+    });
+  };
+
+  const unarchiveChat = (id, event) => {
+    event.stopPropagation();
+    setChats((prev) => prev.map((c) => (c.id === id ? { ...c, archived: false } : c)));
+  };
+
+  // ==========================================================
+  // Upload File
+  // ==========================================================
 
   const handleFiles = async (fileList) => {
     const file = fileList[0];
@@ -310,8 +363,8 @@ function App() {
         <div className="sidebar-section-label">Chats</div>
 
         <div className="chat-list">
-          {chats.map((chat) => (
-            <button
+          {visibleChats.map((chat) => (
+            <div
               key={chat.id}
               className={`chat-list-item ${chat.id === activeChatId ? "active" : ""}`}
               onClick={() => { setActiveChatId(chat.id); setSidebarOpen(false); }}
@@ -321,9 +374,67 @@ function App() {
               <span className="chat-list-time">
                 {new Date(chat.createdAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
               </span>
-            </button>
+              <span className="chat-list-actions">
+                <button
+                  className="chat-action-btn"
+                  onClick={(e) => archiveChat(chat.id, e)}
+                  title="Archive chat"
+                >
+                  📥
+                </button>
+                <button
+                  className="chat-action-btn danger"
+                  onClick={(e) => deleteChat(chat.id, e)}
+                  title="Delete chat"
+                >
+                  ✕
+                </button>
+              </span>
+            </div>
           ))}
         </div>
+
+        {archivedChats.length > 0 && (
+          <>
+            <button
+              className="archived-toggle"
+              onClick={() => setShowArchived((prev) => !prev)}
+            >
+              {showArchived ? "▾" : "▸"} Archived ({archivedChats.length})
+            </button>
+
+            {showArchived && (
+              <div className="chat-list archived-list">
+                {archivedChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    className={`chat-list-item archived ${chat.id === activeChatId ? "active" : ""}`}
+                    onClick={() => { setActiveChatId(chat.id); setSidebarOpen(false); }}
+                  >
+                    <span className="chat-list-icon">💬</span>
+                    <span className="chat-list-title">{chat.title}</span>
+                    <span className="chat-list-actions">
+                      <button
+                        className="chat-action-btn"
+                        onClick={(e) => unarchiveChat(chat.id, e)}
+                        title="Unarchive"
+                      >
+                        📤
+                      </button>
+                      <button
+                        className="chat-action-btn danger"
+                        onClick={(e) => deleteChat(chat.id, e)}
+                        title="Delete chat"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
 
         <div className="sidebar-bottom">
 
